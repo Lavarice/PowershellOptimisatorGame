@@ -2,27 +2,29 @@
 
 Script PowerShell permettant de désactiver temporairement certains services Windows 11 gourmands en ressources pour optimiser le jeu, puis de les réactiver ensuite.
 
-## 1. Contenu du dossier
+## 1. Contenu du dépôt
 
-- `Doc-App-PowerShell.ps1` : affiche une **documentation détaillée** en couleur dans la console sur comment créer des apps (scripts) PowerShell.
-- `scriptJeux.ps1` : active un **mode jeu** sur Windows 11 en désactivant temporairement certains services Windows puis en les réactivant à la fin.
-- `LauncherTerminal.ps1` : **lanceur en mode terminal** avec un menu texte pour lancer tes apps/jeux et le mode jeu.
+- `src/Optimize-GameCpuGpu.ps1` : script d'**optimisation CPU / GPU** pour les jeux (plan d'alimentation, Core Parking, GPU haute performance, lancement du jeu et restauration automatique des paramètres).
+- `scripts/Show-PowerShellAppDocumentation.ps1` : affiche une **documentation détaillée** en couleur dans la console sur comment créer des apps (scripts) PowerShell.
+- `scripts/Enable-GameMode.ps1` : active un **mode jeu** sur Windows 11 en désactivant temporairement certains services Windows puis en les réactivant à la fin.
+- `scripts/Start-TerminalLauncher.ps1` : **lanceur en mode terminal** avec un menu texte pour lancer tes apps/jeux et le mode jeu.
 
 ## 2. Prérequis
 
 - Windows 10 ou 11.
 - PowerShell (version Windows intégrée) ou PowerShell 7 recommandé.
-- Lancer PowerShell **en tant qu'administrateur** pour tout script qui modifie des services système (comme `scriptJeux.ps1`).
+- Lancer PowerShell **en tant qu'administrateur** pour tout script qui modifie des services système (comme `Enable-GameMode.ps1` ou `Optimize-GameCpuGpu.ps1`).
 
-## 3. Documentation : Doc-App-PowerShell.ps1
+## 3. Documentation : Show-PowerShellAppDocumentation.ps1
 
 Ce script affiche une doc pas à pas pour apprendre à créer des apps PowerShell.
 
 ### Lancer la documentation
 
 ```powershell
-cd C:\Users\Revelation\Desktop\PojetPowershell
-.\Doc-App-PowerShell.ps1
+cd C:\Users\Revelation\Desktop\PojetPowershell 
+cd .\scripts
+\.\Show-PowerShellAppDocumentation.ps1
 ```
 
 Le script :
@@ -37,7 +39,7 @@ Le script :
   - les fonctions, modules, menus texte, GUI, etc.
 - Attend une touche avant de se fermer.
 
-## 4. Mode Jeu : scriptJeux.ps1
+## 4. Mode Jeu : Enable-GameMode.ps1
 
 Ce script est fait pour **optimiser un peu les performances en jeu** en arrêtant temporairement certains services Windows (Windows Update, télémétrie, Xbox, indexation, etc.), puis en les remettant comme avant.
 
@@ -59,7 +61,8 @@ cd C:\Users\Revelation\Desktop\PojetPowershell
 3. Lancer le script :
 
 ```powershell
-.\scriptJeux.ps1
+cd .\scripts
+\.\Enable-GameMode.ps1
 ```
 
 Le script :
@@ -75,7 +78,9 @@ Le script :
 Tu peux lancer directement le mode jeu sans question :
 
 ```powershell
-.\scriptJeux.ps1 -SansConfirmation
+cd C:\Users\Revelation\Desktop\PojetPowershell
+cd .\scripts
+\.\Enable-GameMode.ps1 -SansConfirmation
 ```
 
 ## 5. Conseils pour aller plus loin

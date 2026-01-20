@@ -44,7 +44,7 @@ $Apps = @{
 
 function Show-Menu {
     Show-Header
-    Write-Host "1. Activer le MODE JEU (scriptJeux.ps1)" -ForegroundColor Yellow
+    Write-Host "1. Activer le MODE JEU (Enable-GameMode.ps1)" -ForegroundColor Yellow
     Write-Host "2. Lancer Steam" -ForegroundColor White
     Write-Host "3. Lancer Discord" -ForegroundColor White
     Write-Host "4. Lancer le navigateur (Edge)" -ForegroundColor White
@@ -62,14 +62,14 @@ while ($true) {
     switch ($choice.ToUpper()) {
         "1" {
             # Mode jeu (nécessite d'être admin)
-            $scriptPath = Join-Path $PSScriptRoot "scriptJeux.ps1"
+			$scriptPath = Join-Path $PSScriptRoot "Enable-GameMode.ps1"
             if (Test-Path $scriptPath) {
                 Write-Host "Ouverture du MODE JEU..." -ForegroundColor Yellow
                 # On ouvre dans une nouvelle fenêtre pour garder le lanceur ouvert
                 Start-Process powershell -ArgumentList "-NoExit -File `"$scriptPath`""
             }
             else {
-                Write-Host "scriptJeux.ps1 introuvable dans le même dossier que ce lanceur." -ForegroundColor Red
+				Write-Host "Enable-GameMode.ps1 introuvable dans le même dossier que ce lanceur." -ForegroundColor Red
             }
             Pause-Enter
         }
