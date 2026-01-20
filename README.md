@@ -1,4 +1,6 @@
-# Projet PowerShell - Mode Jeu & Documentation
+# PowershellOptimisatorGame
+
+Script PowerShell permettant de désactiver temporairement certains services Windows 11 gourmands en ressources pour optimiser le jeu, puis de les réactiver ensuite.
 
 ## 1. Contenu du dossier
 
