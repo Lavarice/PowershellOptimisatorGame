@@ -6,7 +6,7 @@ Script PowerShell permettant de désactiver temporairement certains services Win
 
 - `Doc-App-PowerShell.ps1` : affiche une **documentation détaillée** en couleur dans la console sur comment créer des apps (scripts) PowerShell.
 - `scriptJeux.ps1` : active un **mode jeu** sur Windows 11 en désactivant temporairement certains services Windows puis en les réactivant à la fin.
-- `test.ps1` : script de test (contenu libre / à expérimenter).
+- `LauncherTerminal.ps1` : **lanceur en mode terminal** avec un menu texte pour lancer tes apps/jeux et le mode jeu.
 
 ## 2. Prérequis
 

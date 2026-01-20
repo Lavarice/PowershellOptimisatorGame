@@ -1,0 +1,266 @@
+Clear-Host
+
+$doc = @'
+
+========== DOCUMENTATION : CRÉER DES APPS POWERSHELL ==========
+
+0. INTRODUCTION
+- Cette documentation t'explique pas à pas comment créer des petites apps (scripts) en PowerShell.
+- Elle est pensée pour un débutant complet.
+- Lis tranquillement chaque section, puis teste les exemples dans un vrai fichier .ps1.
+
+1. PRÉ-REQUIS
+- Avoir Windows 10 ou 11.
+- Avoir PowerShell (intégré à Windows) ou PowerShell 7 (Core) recommandé.
+- Avoir Visual Studio Code (VS Code) + l'extension PowerShell.
+- Créer un dossier de travail, par exemple : C:\Users\Revelation\Desktop\PojetPowershell.
+
+2. COMPRENDRE CE QU'EST UNE APP POWERSHELL
+- En PowerShell, une app est souvent :
+    - Un script .ps1 (ex : Backup.ps1).
+    - Parfois un module .psm1 (bibliothèque de fonctions réutilisables).
+- Une app PowerShell est un programme en ligne de commande qui :
+    - Reçoit des paramètres (dossier, fichier, nom, etc.).
+    - Exécute des actions (copier des fichiers, afficher des infos, etc.).
+    - Peut retourner un code de sortie pour indiquer succès ou erreur.
+
+3. PREMIER SCRIPT : HELLO WORLD
+- Objectif : créer ton tout premier script et l'exécuter.
+- Étape 1 : dans VS Code, crée un fichier Hello.ps1.
+- Étape 2 : mets ce texte dedans :
+    Write-Host "Bonjour, PowerShell !"
+- Étape 3 : enregistre le fichier dans ton dossier de projet.
+- Étape 4 : ouvre PowerShell et place-toi dans le dossier :
+    cd C:\Users\Revelation\Desktop\PojetPowershell
+- Étape 5 : exécute le script :
+    .\Hello.ps1
+- Si tu vois le message "Bonjour, PowerShell !", ton premier script fonctionne.
+
+3.1. PROBLÈME FRÉQUENT : EXECUTION POLICY
+- Si un message dit que l'exécution de scripts est désactivée :
+    - Ouvre PowerShell en Administrateur.
+    - Tape la commande :
+    Set-ExecutionPolicy RemoteSigned
+    - Répond Y pour confirmer.
+    - Ferme puis rouvre PowerShell et réessaie ton script.
+
+4. COMPRENDRE LES BASES DU LANGAGE POWERSHELL
+- Variables :
+    $nom = "Alice"
+    $age = 25
+- Cmdlets (commandes PowerShell) :
+    Get-Process
+    Get-Service
+    Get-ChildItem  # liste les fichiers d'un dossier
+- Pipeline (chaîner les commandes avec |) :
+    Get-Process | Where-Object { $_.CPU -gt 10 }
+- Conditions :
+    if ($age -ge 18) {
+            Write-Host "Majeur"
+    } else {
+            Write-Host "Mineur"
+    }
+- Boucles :
+    foreach ($i in 1..5) {
+            Write-Host "i = $i"
+    }
+
+5. AJOUTER DES PARAMÈTRES À TON APP
+- Une app utile doit souvent recevoir des informations (paramètres).
+- Exemple : app qui salue un utilisateur.
+- Crée un fichier Salut.ps1 :
+    param(
+            [Parameter(Mandatory = $true)]
+            [string]$Nom,
+
+            [int]$Age = 18
+    )
+
+    Write-Host "Bonjour $Nom, tu as $Age ans."
+- Explications :
+    - param(...) doit être tout en haut du fichier.
+    - Mandatory = $true rend le paramètre obligatoire.
+    - $Age = 18 définit une valeur par défaut si Age n'est pas donné.
+- Exemples d'exécution :
+    .\Salut.ps1 -Nom "Revelation" -Age 20
+    .\Salut.ps1 -Nom "Revelation"
+
+6. GÉRER LES ERREURS AVEC TRY / CATCH
+- Pour une vraie app, il faut gérer les erreurs proprement.
+- Exemple : lire un fichier dont le chemin est donné en paramètre.
+    param(
+            [string]$CheminFichier
+    )
+
+    try {
+            if (-not (Test-Path $CheminFichier)) {
+                    throw "Le fichier '$CheminFichier' n'existe pas."
+            }
+
+            $contenu = Get-Content -Path $CheminFichier
+            Write-Host "Contenu du fichier :"
+            Write-Host $contenu
+    }
+    catch {
+            Write-Error "Erreur : $_"
+            exit 1
+    }
+- Points importants :
+    - try { } contient le code principal.
+    - catch { } s'exécute si une erreur survient.
+    - Write-Error affiche un message d'erreur clair.
+    - exit 1 indique au système qu'il y a eu une erreur (1 = échec, 0 = succès).
+
+7. EXEMPLE COMPLET : APP DE SAUVEGARDE
+- Objectif : copier un dossier source vers un dossier de sauvegarde avec une date.
+- Crée un script Backup-Dossier.ps1 et mets-y :
+    param(
+            [Parameter(Mandatory = $true)]
+            [string]$Source,
+
+            [Parameter(Mandatory = $true)]
+            [string]$Destination
+    )
+
+    try {
+            if (-not (Test-Path $Source)) {
+                    throw "Le dossier source '$Source' n'existe pas."
+            }
+
+            if (-not (Test-Path $Destination)) {
+                    Write-Host "Le dossier destination n'existe pas, création..."
+                    New-Item -ItemType Directory -Path $Destination | Out-Null
+            }
+
+            $date = Get-Date -Format "yyyyMMdd_HHmmss"
+            $destFinal = Join-Path $Destination "Backup_$date"
+
+            Write-Host "Copie de '$Source' vers '$destFinal'..."
+            Copy-Item -Path $Source -Destination $destFinal -Recurse
+
+            Write-Host "Sauvegarde terminée avec succès."
+            exit 0
+    }
+    catch {
+            Write-Error "Erreur lors de la sauvegarde : $_"
+            exit 1
+    }
+- Exécution :
+    .\Backup-Dossier.ps1 -Source "C:\Data" -Destination "D:\Sauvegardes"
+
+8. ORGANISER TON CODE : FONCTIONS ET MODULES
+- Quand ton script devient long, crée des fonctions.
+- Exemple de fonction pour créer un dossier horodaté :
+    function New-TimestampedFolder {
+            param(
+                    [string]$BasePath
+            )
+
+            $date = Get-Date -Format "yyyyMMdd_HHmmss"
+            $folder = Join-Path $BasePath $date
+            New-Item -ItemType Directory -Path $folder | Out-Null
+            return $folder
+    }
+- Mettre plusieurs fonctions dans un fichier .psm1 pour créer un module.
+- Exemple d'import de module dans un script :
+    Import-Module -Name ".\UtilBackup.psm1"
+
+9. CRÉER UN MENU TEXTE INTERACTIF
+- Pour rendre ton app plus agréable, tu peux afficher un menu.
+- Exemple simple :
+    function Show-Menu {
+            Clear-Host
+            Write-Host "=== Menu Sauvegarde ==="
+            Write-Host "1. Lancer une sauvegarde"
+            Write-Host "2. Quitter"
+    }
+
+    do {
+            Show-Menu
+            $choix = Read-Host "Choisis une option"
+
+            switch ($choix) {
+                    "1" {
+                            $src = Read-Host "Dossier source"
+                            $dst = Read-Host "Dossier destination"
+                            .\Backup-Dossier.ps1 -Source $src -Destination $dst
+                            Pause
+                    }
+                    "2" {
+                            Write-Host "Au revoir !"
+                    }
+                    default {
+                            Write-Host "Choix invalide."
+                            Pause
+                    }
+            }
+    } while ($choix -ne "2")
+
+10. ALLER PLUS LOIN : INTERFACE GRAPHIQUE (GUI)
+- Une étape plus avancée consiste à créer une fenêtre graphique.
+- Exemple ultra simple avec Windows Forms :
+    Add-Type -AssemblyName System.Windows.Forms
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Mon App PowerShell"
+    $form.Width = 400
+    $form.Height = 300
+
+    [System.Windows.Forms.Application]::Run($form)
+- Conseil : maîtrise d'abord les scripts en console avant de passer aux GUI.
+
+11. DISTRIBUER TON APP POWERSHELL
+- Pour partager ton app avec quelqu'un :
+    - Regroupe tes .ps1 et .psm1 dans un dossier.
+    - Ajoute un fichier README.txt expliquant :
+        - Comment lancer le script.
+        - Quels paramètres utiliser.
+        - Les prérequis (version de PowerShell, etc.).
+- Optionnel : ajouter le chemin du dossier dans la variable d'environnement PATH.
+- Optionnel avancé : transformer le script en .exe avec des outils comme ps2exe.
+
+12. PLAN D'APPRENTISSAGE CONSEILLÉ
+- Étape 1 : faire 3 à 4 petits scripts simples :
+    - "Hello World".
+    - Lire un fichier texte et l'afficher.
+    - Lister les fichiers d'un dossier et les exporter en CSV.
+- Étape 2 : pour chaque script, ajouter :
+    - Des paramètres avec param(...).
+    - De la gestion d'erreurs avec try / catch.
+- Étape 3 : regrouper ton code en fonctions, puis en module .psm1.
+- Étape 4 : créer une vraie petite app complète (sauvegarde, nettoyage, etc.).
+- Étape 5 (optionnelle) : explorer les GUI (Windows Forms, WPF).
+
+======================================================
+Fin de la documentation : tu peux maintenant commencer à coder tes propres apps PowerShell !
+======================================================
+'@
+
+$docLines = $doc -split "`n"
+
+foreach ($line in $docLines) {
+    if ($line -match "^=+") {
+        # Ligne de séparation ou gros titre
+        Write-Host $line -ForegroundColor Yellow
+    }
+    elseif ($line -match "^[0-9]+\.") {
+        # Section (1., 2., ...)
+        Write-Host $line -ForegroundColor Cyan
+    }
+    elseif ($line -match "^- ") {
+        # Liste à puces
+        Write-Host $line -ForegroundColor White
+    }
+    elseif ($line -match "^  ") {
+        # Exemple de code (indenté)
+        Write-Host $line -ForegroundColor Green
+    }
+    else {
+        # Texte normal
+        Write-Host $line -ForegroundColor Gray
+    }
+}
+
+Write-Host "" 
+Write-Host "Fin de la documentation. Appuie sur une touche pour fermer..." -ForegroundColor Magenta
+[void][System.Console]::ReadKey($true)
