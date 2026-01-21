@@ -18,7 +18,8 @@ param(
 	[switch]$EnableHardwareGpuScheduling,
 	[switch]$DisableFullscreenOptimizations,
 	[switch]$DisableServices,
-	[switch]$SansConfirmation
+	[switch]$SansConfirmation,
+	[switch]$PresetCS2
 )
 
 Write-Host "=== Optimisation CPU / GPU pour le jeu ===" -ForegroundColor Cyan
@@ -69,6 +70,29 @@ $servicesToStop = @(
 	# Machines virtuelles
 	"vmcompute","vmms","HvHost"
 )
+
+# Préconfiguration CS2 (chemin standard Steam, options perf agressives mais réversibles)
+if ($PresetCS2.IsPresent) {
+	$cs2Paths = @(
+		"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe",
+		"C:\Program Files\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe"
+	)
+
+	if (-not $GamePath) {
+		foreach ($p in $cs2Paths) {
+			if (Test-Path -LiteralPath $p) {
+				$GamePath = $p
+				break
+			}
+		}
+	}
+
+	if (-not $BoostTimerResolution)         { $BoostTimerResolution         = $true }
+	if (-not $EnableHardwareGpuScheduling)  { $EnableHardwareGpuScheduling  = $true }
+	if (-not $DisableFullscreenOptimizations){ $DisableFullscreenOptimizations = $true }
+	if (-not $DisableServices)              { $DisableServices              = $true }
+	if (-not $SansConfirmation)             { $SansConfirmation             = $true }
+}
 
 # Récupérer le GUID du plan d'alimentation actif
 $activeSchemeRaw = powercfg -getactivescheme 2>$null
