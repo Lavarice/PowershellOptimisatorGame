@@ -19,10 +19,14 @@ param(
 	[switch]$DisableFullscreenOptimizations,
 	[switch]$DisableServices,
 	[switch]$SansConfirmation,
-	[switch]$PresetCS2
+	[switch]$PresetCS2,
+	[switch]$RemoveNonEssentialAppx,
+	[ValidateSet('Safe','Full')]
+	[string]$Profile = 'Safe'
 )
 
 Write-Host "=== Optimisation CPU / GPU pour le jeu ===" -ForegroundColor Cyan
+Write-Log "Démarrage script - Profile=$Profile"
 
 # Variables pour la restauration ultérieure
 $coreParkingKey        = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\be337238-0d82-4146-a960-4f3749d470c7"
@@ -71,12 +75,34 @@ $servicesToStop = @(
 	"vmcompute","vmms","HvHost"
 )
 
+$appxLightBloat = @(
+	# Apps grand public sans impact système, retrait facultatif
+	"Microsoft.BingWeather",
+	"Microsoft.BingNews",
+	"Microsoft.MicrosoftSolitaireCollection",
+	"Clipchamp.Clipchamp",
+	"Microsoft.WindowsFeedbackHub"
+)
+
+$logPath = Join-Path $env:TEMP "UltimeOptimiser.log"
+
+function Write-Log {
+	param([string]$Message)
+	$timestamp = (Get-Date).ToString('s')
+	$entry = "$timestamp`t$Message"
+	Add-Content -Path $logPath -Value $entry -Encoding utf8 -ErrorAction SilentlyContinue
+}
+
 # Préconfiguration CS2 (chemin standard Steam, options perf agressives mais réversibles)
 if ($PresetCS2.IsPresent) {
 	$cs2Paths = @(
 		"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe",
 		"C:\Program Files\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe"
 	)
+
+	if (-not $PSBoundParameters.ContainsKey('Profile')) {
+		$Profile = 'Full'
+	}
 
 	if (-not $GamePath) {
 		foreach ($p in $cs2Paths) {
@@ -92,7 +118,44 @@ if ($PresetCS2.IsPresent) {
 	if (-not $DisableFullscreenOptimizations){ $DisableFullscreenOptimizations = $true }
 	if (-not $DisableServices)              { $DisableServices              = $true }
 	if (-not $SansConfirmation)             { $SansConfirmation             = $true }
+	if (-not $RemoveNonEssentialAppx)       { $RemoveNonEssentialAppx       = $true }
 }
+
+# Appliquer les valeurs par défaut en fonction du profil, sans écraser les choix explicites
+if (-not $PSBoundParameters.ContainsKey('BoostTimerResolution')) {
+	if ($Profile -eq 'Safe' -or $Profile -eq 'Full') { $BoostTimerResolution = $true }
+}
+if (-not $PSBoundParameters.ContainsKey('DisableFullscreenOptimizations')) {
+	if ($Profile -eq 'Safe' -or $Profile -eq 'Full') { $DisableFullscreenOptimizations = $true }
+}
+if (-not $PSBoundParameters.ContainsKey('EnableHardwareGpuScheduling')) {
+	if ($Profile -eq 'Full') { $EnableHardwareGpuScheduling = $true }
+}
+if (-not $PSBoundParameters.ContainsKey('DisableServices')) {
+	if ($Profile -eq 'Full') { $DisableServices = $true }
+}
+if (-not $PSBoundParameters.ContainsKey('RemoveNonEssentialAppx')) {
+	if ($Profile -eq 'Full') { $RemoveNonEssentialAppx = $true }
+}
+
+$plan = [ordered]@{
+	Profile       = $Profile
+	GamePath      = $GamePath
+	Priority      = $GameProcessPriority
+	AffinityMask  = $GameAffinityMask
+	Timer1ms      = $BoostTimerResolution
+	HwSch         = $EnableHardwareGpuScheduling
+	FSEOff        = $DisableFullscreenOptimizations
+	StopServices  = $DisableServices
+	RemoveAppx    = $RemoveNonEssentialAppx
+}
+
+Write-Host "Résumé des actions (profil $Profile) :" -ForegroundColor White
+foreach ($k in $plan.Keys) {
+	Write-Host (" - {0}: {1}" -f $k, $plan[$k]) -ForegroundColor Gray
+}
+Write-Log ("Plan: " + ($plan.GetEnumerator() | ForEach-Object { "$($_.Name)=$($_.Value)" } | Sort-Object | -join '; '))
+Write-Host "Log: $logPath" -ForegroundColor DarkGray
 
 # Récupérer le GUID du plan d'alimentation actif
 $activeSchemeRaw = powercfg -getactivescheme 2>$null
@@ -237,6 +300,28 @@ if ($DisableServices.IsPresent) {
 	}
 } else {
 	Write-Host "Désactivation des services ignorée (paramètre non demandé)." -ForegroundColor Gray
+}
+
+# Retirer quelques Appx non essentiels (optionnel, non réversible automatiquement)
+if ($RemoveNonEssentialAppx.IsPresent) {
+	Write-Host "Suppression d'applications Appx non essentielles (mode léger)." -ForegroundColor Cyan
+	foreach ($pkg in $appxLightBloat) {
+		try {
+			$installed = Get-AppxPackage -AllUsers $pkg -ErrorAction SilentlyContinue
+			if ($installed) {
+				if ($PSCmdlet.ShouldProcess($pkg, "Remove-AppxPackage pour tous les utilisateurs")) {
+					Remove-AppxPackage -AllUsers -Package $installed.PackageFullName -ErrorAction Stop
+					Write-Host "$pkg supprimé." -ForegroundColor Green
+				}
+			} else {
+				Write-Host "$pkg non présent, ignoré." -ForegroundColor DarkGray
+			}
+		} catch {
+			Write-Warning "Impossible de supprimer $pkg : $($_.Exception.Message)"
+		}
+	}
+} else {
+	Write-Host "Suppression Appx ignorée (paramètre non demandé)." -ForegroundColor Gray
 }
 
 # Activer l'ordonnancement matériel GPU (HwSch) si demandé
@@ -608,6 +693,7 @@ if ($timerResolutionApplied -and ([System.Management.Automation.PSTypeName]"WinM
 }
 
 Write-Host "Optimisation terminée. Bon jeu !" -ForegroundColor Cyan
+Write-Log "Fin script"
 
 
 
